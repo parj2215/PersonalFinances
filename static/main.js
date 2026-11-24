@@ -1,8 +1,8 @@
 document.addEventListener("DOMContentLoaded", () => {
 
-    // --------------------------------------------------
+    // ==================================================
     // SHARED ELEMENTS
-    // --------------------------------------------------
+    // ==================================================
 
     const transactionModal = document.getElementById(
         "transaction-modal"
@@ -10,6 +10,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const contractModal = document.getElementById(
         "contract-modal"
+    );
+
+    const priceModal = document.getElementById(
+        "price-modal"
     );
 
     const transactionForm = document.getElementById(
@@ -20,6 +24,10 @@ document.addEventListener("DOMContentLoaded", () => {
         "contract-form"
     );
 
+    const priceForm = document.getElementById(
+        "price-form"
+    );
+
     const csrfToken = document.querySelector(
         'meta[name="csrf-token"]'
     ).content;
@@ -27,9 +35,9 @@ document.addEventListener("DOMContentLoaded", () => {
     let categories = [];
 
 
-    // --------------------------------------------------
+    // ==================================================
     // HELPERS
-    // --------------------------------------------------
+    // ==================================================
 
     function localDateString() {
 
@@ -50,11 +58,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     function centsToEuros(cents) {
-        return (cents / 100).toFixed(2);
+
+        return (
+            Number(cents) / 100
+        ).toFixed(2);
     }
 
 
-    function populateSelect(select, items, placeholder) {
+    function populateSelect(
+        select,
+        items,
+        placeholder
+    ) {
 
         select.replaceChildren(
             new Option(placeholder, "")
@@ -63,16 +78,24 @@ document.addEventListener("DOMContentLoaded", () => {
         items.forEach(item => {
 
             select.add(
-                new Option(item.name, item.id)
+                new Option(
+                    item.name,
+                    item.id
+                )
             );
 
         });
     }
 
 
-    function showError(elementId, message) {
+    function showError(
+        elementId,
+        message
+    ) {
 
-        const element = document.getElementById(elementId);
+        const element = document.getElementById(
+            elementId
+        );
 
         if (!element) {
             return;
@@ -83,7 +106,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    async function apiRequest(url, method = "GET", data = null) {
+    async function apiRequest(
+        url,
+        method = "GET",
+        data = null
+    ) {
 
         const options = {
             method,
@@ -94,16 +121,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (data !== null) {
 
-            options.headers["Content-Type"] = "application/json";
+            options.headers["Content-Type"] =
+                "application/json";
 
             options.body = JSON.stringify(data);
         }
 
-        const response = await fetch(url, options);
+        const response = await fetch(
+            url,
+            options
+        );
 
         const result = await response.json();
 
         if (!response.ok) {
+
             throw new Error(
                 result.error || "Request failed"
             );
@@ -115,10 +147,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function loadFormOptions() {
 
-        const response = await fetch("/api/form-options");
+        const response = await fetch(
+            "/api/form-options"
+        );
 
         if (!response.ok) {
-            throw new Error("Could not load accounts and categories");
+
+            throw new Error(
+                "Could not load accounts and categories"
+            );
         }
 
         const data = await response.json();
@@ -143,9 +180,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    // --------------------------------------------------
+    // ==================================================
     // TRANSACTION FORM
-    // --------------------------------------------------
+    // ==================================================
 
     const transactionType = document.getElementById(
         "transaction-type"
@@ -186,11 +223,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
         toGroup.hidden = type === "expense";
 
-        transactionCategory.required = type !== "transfer";
+        transactionCategory.required =
+            type !== "transfer";
 
-        fromAccount.required = type !== "income";
+        fromAccount.required =
+            type !== "income";
 
-        toAccount.required = type !== "expense";
+        toAccount.required =
+            type !== "expense";
 
         const matchingCategories = categories.filter(
             category => category.type === type
@@ -210,13 +250,16 @@ document.addEventListener("DOMContentLoaded", () => {
     );
 
 
-    // --------------------------------------------------
+    // ==================================================
     // OPEN TRANSACTION MODAL
-    // --------------------------------------------------
+    // ==================================================
 
-    async function openTransactionModal(record = null) {
+    async function openTransactionModal(
+        record = null
+    ) {
 
         try {
+
             await loadFormOptions();
 
             transactionForm.reset();
@@ -227,11 +270,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 "transaction-date"
             ).value = localDateString();
 
-            showError("transaction-error", "");
+            showError(
+                "transaction-error",
+                ""
+            );
 
             if (record) {
 
-                transactionForm.dataset.editId = record.id;
+                transactionForm.dataset.editId =
+                    record.id;
 
                 document.getElementById(
                     "transaction-modal-title"
@@ -243,10 +290,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 transactionForm.elements["description"].value =
                     record.description;
 
-                transactionType.value = record.type;
+                transactionType.value =
+                    record.type;
 
                 transactionForm.elements["amount"].value =
-                    centsToEuros(record.amount_cents);
+                    centsToEuros(
+                        record.amount_cents
+                    );
 
                 updateTransactionFields();
 
@@ -273,6 +323,7 @@ document.addEventListener("DOMContentLoaded", () => {
             transactionModal.showModal();
 
         } catch (error) {
+
             alert(error.message);
         }
     }
@@ -283,7 +334,9 @@ document.addEventListener("DOMContentLoaded", () => {
     ).forEach(button => {
 
         button.addEventListener("click", () => {
+
             openTransactionModal();
+
         });
 
     });
@@ -300,14 +353,15 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
             openTransactionModal(record);
+
         });
 
     });
 
 
-    // --------------------------------------------------
+    // ==================================================
     // SAVE TRANSACTION
-    // --------------------------------------------------
+    // ==================================================
 
     transactionForm.addEventListener(
         "submit",
@@ -315,29 +369,42 @@ document.addEventListener("DOMContentLoaded", () => {
 
             event.preventDefault();
 
-            showError("transaction-error", "");
-
-            const data = Object.fromEntries(
-                new FormData(transactionForm).entries()
+            showError(
+                "transaction-error",
+                ""
             );
 
-            const editId = transactionForm.dataset.editId;
+            const data = Object.fromEntries(
+                new FormData(
+                    transactionForm
+                ).entries()
+            );
+
+            const editId =
+                transactionForm.dataset.editId;
 
             const url = editId
                 ? `/api/transactions/${editId}`
                 : "/api/transactions";
 
-            const method = editId ? "PUT" : "POST";
+            const method = editId
+                ? "PUT"
+                : "POST";
 
-            const submitButton = transactionForm.querySelector(
-                'button[type="submit"]'
-            );
+            const submitButton =
+                transactionForm.querySelector(
+                    'button[type="submit"]'
+                );
 
             submitButton.disabled = true;
 
             try {
 
-                await apiRequest(url, method, data);
+                await apiRequest(
+                    url,
+                    method,
+                    data
+                );
 
                 transactionModal.close();
 
@@ -359,43 +426,49 @@ document.addEventListener("DOMContentLoaded", () => {
     );
 
 
-    // --------------------------------------------------
+    // ==================================================
     // DELETE TRANSACTION
-    // --------------------------------------------------
+    // ==================================================
 
     document.querySelectorAll(
         ".delete-transaction"
     ).forEach(button => {
 
-        button.addEventListener("click", async () => {
+        button.addEventListener(
+            "click",
+            async () => {
 
-            const id = button.dataset.id;
+                const id = button.dataset.id;
 
-            if (!confirm("Delete this transaction?")) {
-                return;
+                if (!confirm(
+                    "Delete this transaction?"
+                )) {
+                    return;
+                }
+
+                try {
+
+                    await apiRequest(
+                        `/api/transactions/${id}`,
+                        "DELETE"
+                    );
+
+                    window.location.reload();
+
+                } catch (error) {
+
+                    alert(error.message);
+                }
+
             }
-
-            try {
-
-                await apiRequest(
-                    `/api/transactions/${id}`,
-                    "DELETE"
-                );
-
-                window.location.reload();
-
-            } catch (error) {
-                alert(error.message);
-            }
-
-        });
+        );
 
     });
 
 
-    // --------------------------------------------------
+    // ==================================================
     // CONTRACT FORM
-    // --------------------------------------------------
+    // ==================================================
 
     const contractType = document.getElementById(
         "contract-type"
@@ -405,11 +478,17 @@ document.addEventListener("DOMContentLoaded", () => {
         "contract-category"
     );
 
+    const contractAmount = document.getElementById(
+        "contract-amount"
+    );
+
 
     function updateContractCategories() {
 
         const matchingCategories = categories.filter(
-            category => category.type === contractType.value
+            category => (
+                category.type === contractType.value
+            )
         );
 
         populateSelect(
@@ -426,11 +505,13 @@ document.addEventListener("DOMContentLoaded", () => {
     );
 
 
-    // --------------------------------------------------
+    // ==================================================
     // OPEN CONTRACT MODAL
-    // --------------------------------------------------
+    // ==================================================
 
-    async function openContractModal(record = null) {
+    async function openContractModal(
+        record = null
+    ) {
 
         try {
 
@@ -440,14 +521,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
             delete contractForm.dataset.editId;
 
-            showError("contract-error", "");
+            showError(
+                "contract-error",
+                ""
+            );
 
             contractForm.elements["start_date"].value =
                 localDateString();
 
+            // Amount can be entered for new contracts.
+            //
+            // Existing contract prices are managed
+            // through the Change Price popup.
+
+            contractAmount.readOnly = false;
+            contractAmount.title = "";
+
             if (record) {
 
-                contractForm.dataset.editId = record.id;
+                contractForm.dataset.editId =
+                    record.id;
 
                 document.getElementById(
                     "contract-modal-title"
@@ -456,10 +549,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 contractForm.elements["name"].value =
                     record.name;
 
-                contractType.value = record.type;
+                contractType.value =
+                    record.type;
 
-                contractForm.elements["amount"].value =
-                    centsToEuros(record.amount_cents);
+                contractAmount.value = centsToEuros(
+                    record.current_amount_cents
+                );
+
+                contractAmount.readOnly = true;
+
+                contractAmount.title =
+                    "Use Change Price to modify contract prices";
 
                 contractForm.elements["frequency"].value =
                     record.frequency;
@@ -495,6 +595,7 @@ document.addEventListener("DOMContentLoaded", () => {
             contractModal.showModal();
 
         } catch (error) {
+
             alert(error.message);
         }
     }
@@ -505,7 +606,9 @@ document.addEventListener("DOMContentLoaded", () => {
     ).forEach(button => {
 
         button.addEventListener("click", () => {
+
             openContractModal();
+
         });
 
     });
@@ -522,14 +625,15 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
             openContractModal(record);
+
         });
 
     });
 
 
-    // --------------------------------------------------
+    // ==================================================
     // SAVE CONTRACT
-    // --------------------------------------------------
+    // ==================================================
 
     contractForm.addEventListener(
         "submit",
@@ -537,29 +641,42 @@ document.addEventListener("DOMContentLoaded", () => {
 
             event.preventDefault();
 
-            showError("contract-error", "");
-
-            const data = Object.fromEntries(
-                new FormData(contractForm).entries()
+            showError(
+                "contract-error",
+                ""
             );
 
-            const editId = contractForm.dataset.editId;
+            const data = Object.fromEntries(
+                new FormData(
+                    contractForm
+                ).entries()
+            );
+
+            const editId =
+                contractForm.dataset.editId;
 
             const url = editId
                 ? `/api/contracts/${editId}`
                 : "/api/contracts";
 
-            const method = editId ? "PUT" : "POST";
+            const method = editId
+                ? "PUT"
+                : "POST";
 
-            const submitButton = contractForm.querySelector(
-                'button[type="submit"]'
-            );
+            const submitButton =
+                contractForm.querySelector(
+                    'button[type="submit"]'
+                );
 
             submitButton.disabled = true;
 
             try {
 
-                await apiRequest(url, method, data);
+                await apiRequest(
+                    url,
+                    method,
+                    data
+                );
 
                 contractModal.close();
 
@@ -581,269 +698,567 @@ document.addEventListener("DOMContentLoaded", () => {
     );
 
 
-    // --------------------------------------------------
+    // ==================================================
     // CANCEL CONTRACT
-    // --------------------------------------------------
+    // ==================================================
 
     document.querySelectorAll(
         ".cancel-contract"
     ).forEach(button => {
 
-        button.addEventListener("click", async () => {
+        button.addEventListener(
+            "click",
+            async () => {
 
-            const id = button.dataset.id;
+                const id = button.dataset.id;
 
-            if (!confirm("Cancel this contract?")) {
-                return;
+                if (!confirm(
+                    "Cancel this contract?"
+                )) {
+                    return;
+                }
+
+                try {
+
+                    await apiRequest(
+                        `/api/contracts/${id}/cancel`,
+                        "POST"
+                    );
+
+                    window.location.reload();
+
+                } catch (error) {
+
+                    alert(error.message);
+                }
+
             }
-
-            try {
-
-                await apiRequest(
-                    `/api/contracts/${id}/cancel`,
-                    "POST"
-                );
-
-                window.location.reload();
-
-            } catch (error) {
-                alert(error.message);
-            }
-
-        });
+        );
 
     });
 
 
-    // --------------------------------------------------
+    // ==================================================
+    // DELETE CONTRACT
+    // ==================================================
+
+    document.querySelectorAll(
+        ".delete-contract"
+    ).forEach(button => {
+
+        button.addEventListener(
+            "click",
+            async () => {
+
+                const id = button.dataset.id;
+
+                const confirmed = confirm(
+                    "Permanently delete this contract?\n\n" +
+                    "Previously confirmed transactions " +
+                    "will be preserved."
+                );
+
+                if (!confirmed) {
+                    return;
+                }
+
+                try {
+
+                    await apiRequest(
+                        `/api/contracts/${id}`,
+                        "DELETE"
+                    );
+
+                    window.location.reload();
+
+                } catch (error) {
+
+                    alert(error.message);
+                }
+
+            }
+        );
+
+    });
+
+
+    // ==================================================
+    // CONTRACT PRICE HISTORY
+    // ==================================================
+
+    const priceHistoryBody = document.getElementById(
+        "price-history-body"
+    );
+
+
+    function renderPriceHistory(prices) {
+
+        priceHistoryBody.replaceChildren();
+
+        if (prices.length === 0) {
+
+            const row = document.createElement("tr");
+
+            const cell = document.createElement("td");
+
+            cell.colSpan = 2;
+            cell.className = "empty-message";
+
+            cell.textContent =
+                "No price history available.";
+
+            row.appendChild(cell);
+
+            priceHistoryBody.appendChild(row);
+
+            return;
+        }
+
+        prices.forEach(price => {
+
+            const row = document.createElement("tr");
+
+            const dateCell = document.createElement("td");
+
+            const amountCell = document.createElement("td");
+
+            dateCell.textContent =
+                price.valid_from;
+
+            amountCell.textContent =
+                `€${centsToEuros(price.amount_cents)}`;
+
+            row.appendChild(dateCell);
+            row.appendChild(amountCell);
+
+            priceHistoryBody.appendChild(row);
+
+        });
+    }
+
+
+    async function loadPriceHistory(contractId) {
+
+        const result = await apiRequest(
+            `/api/contracts/${contractId}/prices`
+        );
+
+        renderPriceHistory(
+            result.prices
+        );
+    }
+
+
+    // ==================================================
+    // OPEN CHANGE PRICE MODAL
+    // ==================================================
+
+    document.querySelectorAll(
+        ".change-contract-price"
+    ).forEach(button => {
+
+        button.addEventListener(
+            "click",
+            async () => {
+
+                const contractId =
+                    button.dataset.id;
+
+                const contractName =
+                    button.dataset.name;
+
+                const currentAmount =
+                    Number(button.dataset.amount);
+
+                priceForm.reset();
+
+                priceForm.dataset.contractId =
+                    contractId;
+
+                document.getElementById(
+                    "price-contract-name"
+                ).textContent = contractName;
+
+                document.getElementById(
+                    "new-contract-price"
+                ).value = centsToEuros(
+                    currentAmount
+                );
+
+                document.getElementById(
+                    "price-valid-from"
+                ).value = localDateString();
+
+                showError(
+                    "price-error",
+                    ""
+                );
+
+                priceHistoryBody.replaceChildren();
+
+                priceModal.showModal();
+
+                try {
+
+                    await loadPriceHistory(
+                        contractId
+                    );
+
+                } catch (error) {
+
+                    showError(
+                        "price-error",
+                        error.message
+                    );
+                }
+
+            }
+        );
+
+    });
+
+
+    // ==================================================
+    // SAVE CONTRACT PRICE
+    // ==================================================
+
+    priceForm.addEventListener(
+        "submit",
+        async event => {
+
+            event.preventDefault();
+
+            showError(
+                "price-error",
+                ""
+            );
+
+            const contractId =
+                priceForm.dataset.contractId;
+
+            const data = Object.fromEntries(
+                new FormData(
+                    priceForm
+                ).entries()
+            );
+
+            const submitButton =
+                priceForm.querySelector(
+                    'button[type="submit"]'
+                );
+
+            submitButton.disabled = true;
+
+            try {
+
+                await apiRequest(
+                    `/api/contracts/${contractId}/prices`,
+                    "POST",
+                    data
+                );
+
+                await loadPriceHistory(
+                    contractId
+                );
+
+                priceModal.close();
+
+                window.location.reload();
+
+            } catch (error) {
+
+                showError(
+                    "price-error",
+                    error.message
+                );
+
+            } finally {
+
+                submitButton.disabled = false;
+            }
+
+        }
+    );
+
+
+    // ==================================================
     // CONFIRM CONTRACT PAYMENT
-    // --------------------------------------------------
+    // ==================================================
 
     document.querySelectorAll(
         ".confirm-payment"
     ).forEach(button => {
 
-        button.addEventListener("click", async () => {
+        button.addEventListener(
+            "click",
+            async () => {
 
-            const contractId = button.dataset.contractId;
+                const contractId =
+                    button.dataset.contractId;
 
-            const dueDate = button.dataset.date;
+                const dueDate =
+                    button.dataset.date;
 
-            if (!confirm(
-                `Confirm payment scheduled for ${dueDate}?`
-            )) {
-                return;
-            }
+                const scheduledAmount =
+                    Number(button.dataset.amount);
 
-            try {
+                // Default to the historical price
+                // applicable on the scheduled date.
+                //
+                // The user may enter a different amount
+                // for this payment only.
 
-                await apiRequest(
-                    `/api/contracts/${contractId}/payments`,
-                    "POST",
-                    {
-                        due_date: dueDate
-                    }
+                const amountInput = prompt(
+                    `Confirm payment for ${dueDate}.\n\n` +
+                    "Enter the actual amount (€):",
+                    centsToEuros(scheduledAmount)
                 );
 
-                window.location.reload();
+                if (amountInput === null) {
+                    return;
+                }
 
-            } catch (error) {
-                alert(error.message);
+                const amount = amountInput.trim();
+
+                if (!amount) {
+
+                    alert(
+                        "Payment amount cannot be empty."
+                    );
+
+                    return;
+                }
+
+                const confirmed = confirm(
+                    `Record payment of €${amount} ` +
+                    `for ${dueDate}?`
+                );
+
+                if (!confirmed) {
+                    return;
+                }
+
+                try {
+
+                    await apiRequest(
+                        `/api/contracts/${contractId}/payments`,
+                        "POST",
+                        {
+                            due_date: dueDate,
+                            override_amount: amount
+                        }
+                    );
+
+                    window.location.reload();
+
+                } catch (error) {
+
+                    alert(error.message);
+                }
+
             }
-
-        });
+        );
 
     });
 
-    // --------------------------------------------------
+
+    // ==================================================
     // EDIT ACCOUNT
-    // --------------------------------------------------
+    // ==================================================
 
-    document.querySelectorAll(".edit-account").forEach(button => {
+    document.querySelectorAll(
+        ".edit-account"
+    ).forEach(button => {
 
-        button.addEventListener("click", async () => {
+        button.addEventListener(
+            "click",
+            async () => {
 
-            const id = button.dataset.id;
+                const id = button.dataset.id;
 
-            const name = prompt(
-                "Account name:",
-                button.dataset.name
-            );
-
-            if (name === null) return;
-
-            const balance = prompt(
-                "Opening balance (€):",
-                centsToEuros(Number(button.dataset.balance))
-            );
-
-            if (balance === null) return;
-
-            try {
-
-                await apiRequest(
-                    `/api/accounts/${id}`,
-                    "PUT",
-                    {
-                        name: name.trim(),
-                        opening_balance: balance
-                    }
+                const name = prompt(
+                    "Account name:",
+                    button.dataset.name
                 );
 
-                window.location.reload();
+                if (name === null) {
+                    return;
+                }
 
-            } catch (error) {
-                alert(error.message);
+                const balance = prompt(
+                    "Opening balance (€):",
+                    centsToEuros(
+                        Number(button.dataset.balance)
+                    )
+                );
+
+                if (balance === null) {
+                    return;
+                }
+
+                try {
+
+                    await apiRequest(
+                        `/api/accounts/${id}`,
+                        "PUT",
+                        {
+                            name: name.trim(),
+                            opening_balance: balance
+                        }
+                    );
+
+                    window.location.reload();
+
+                } catch (error) {
+
+                    alert(error.message);
+                }
+
             }
-
-        });
+        );
 
     });
 
-    // --------------------------------------------------
+
+    // ==================================================
     // DELETE ACCOUNT
-    // --------------------------------------------------
+    // ==================================================
 
-    document.querySelectorAll(".delete-account").forEach(button => {
+    document.querySelectorAll(
+        ".delete-account"
+    ).forEach(button => {
 
-        button.addEventListener("click", async () => {
+        button.addEventListener(
+            "click",
+            async () => {
 
-            const id = button.dataset.id;
+                const id = button.dataset.id;
 
-            if (!confirm("Permanently delete this account?")) {
-                return;
+                if (!confirm(
+                    "Permanently delete this account?"
+                )) {
+                    return;
+                }
+
+                try {
+
+                    await apiRequest(
+                        `/api/accounts/${id}`,
+                        "DELETE"
+                    );
+
+                    window.location.reload();
+
+                } catch (error) {
+
+                    alert(error.message);
+                }
+
             }
-
-            try {
-
-                await apiRequest(
-                    `/api/accounts/${id}`,
-                    "DELETE"
-                );
-
-                window.location.reload();
-
-            } catch (error) {
-                alert(error.message);
-            }
-
-        });
+        );
 
     });
 
-    // --------------------------------------------------
+
+    // ==================================================
     // EDIT CATEGORY
-    // --------------------------------------------------
+    // ==================================================
 
-    document.querySelectorAll(".edit-category").forEach(button => {
+    document.querySelectorAll(
+        ".edit-category"
+    ).forEach(button => {
 
-        button.addEventListener("click", async () => {
+        button.addEventListener(
+            "click",
+            async () => {
 
-            const id = button.dataset.id;
+                const id = button.dataset.id;
 
-            const name = prompt(
-                "Category name:",
-                button.dataset.name
-            );
-
-            if (name === null) return;
-
-            const type = prompt(
-                "Category type (income / expense):",
-                button.dataset.type
-            );
-
-            if (type === null) return;
-
-            try {
-
-                await apiRequest(
-                    `/api/categories/${id}`,
-                    "PUT",
-                    {
-                        name: name.trim(),
-                        type: type.trim().toLowerCase()
-                    }
+                const name = prompt(
+                    "Category name:",
+                    button.dataset.name
                 );
 
-                window.location.reload();
+                if (name === null) {
+                    return;
+                }
 
-            } catch (error) {
-                alert(error.message);
+                const type = prompt(
+                    "Category type (income / expense):",
+                    button.dataset.type
+                );
+
+                if (type === null) {
+                    return;
+                }
+
+                try {
+
+                    await apiRequest(
+                        `/api/categories/${id}`,
+                        "PUT",
+                        {
+                            name: name.trim(),
+                            type: type.trim().toLowerCase()
+                        }
+                    );
+
+                    window.location.reload();
+
+                } catch (error) {
+
+                    alert(error.message);
+                }
+
             }
-
-        });
+        );
 
     });
 
-    // --------------------------------------------------
+
+    // ==================================================
     // DELETE CATEGORY
-    // --------------------------------------------------
+    // ==================================================
 
-    document.querySelectorAll(".delete-category").forEach(button => {
+    document.querySelectorAll(
+        ".delete-category"
+    ).forEach(button => {
 
-        button.addEventListener("click", async () => {
+        button.addEventListener(
+            "click",
+            async () => {
 
-            const id = button.dataset.id;
+                const id = button.dataset.id;
 
-            if (!confirm("Permanently delete this category?")) {
-                return;
+                if (!confirm(
+                    "Permanently delete this category?"
+                )) {
+                    return;
+                }
+
+                try {
+
+                    await apiRequest(
+                        `/api/categories/${id}`,
+                        "DELETE"
+                    );
+
+                    window.location.reload();
+
+                } catch (error) {
+
+                    alert(error.message);
+                }
+
             }
-
-            try {
-
-                await apiRequest(
-                    `/api/categories/${id}`,
-                    "DELETE"
-                );
-
-                window.location.reload();
-
-            } catch (error) {
-                alert(error.message);
-            }
-
-        });
+        );
 
     });
 
-    // --------------------------------------------------
-    // DELETE CONTRACT
-    // --------------------------------------------------
 
-    document.querySelectorAll(".delete-contract").forEach(button => {
-
-        button.addEventListener("click", async () => {
-
-            const id = button.dataset.id;
-
-            const confirmed = confirm(
-                "Permanently delete this contract?\n\n" +
-                "Previously confirmed transactions will be preserved."
-            );
-
-            if (!confirmed) return;
-
-            try {
-
-                await apiRequest(
-                    `/api/contracts/${id}`,
-                    "DELETE"
-                );
-
-                window.location.reload();
-
-            } catch (error) {
-                alert(error.message);
-            }
-
-        });
-
-    });
-
-    // --------------------------------------------------
-    // CLOSE MODALS
-    // --------------------------------------------------
+    // ==================================================
+    // CLOSE DIALOGS
+    // ==================================================
 
     document.querySelectorAll(
         "[data-close-dialog]"
@@ -858,11 +1273,12 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
 
-    // --------------------------------------------------
+    // ==================================================
     // INITIAL STATE
-    // --------------------------------------------------
+    // ==================================================
 
     updateTransactionFields();
+
     updateContractCategories();
 
 });

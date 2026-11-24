@@ -1,29 +1,46 @@
 <!DOCTYPE html>
+
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <meta name="csrf-token" content="{{ csrf_token }}">
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="csrf-token"
+        content="{{ csrf_token }}"
+    >
 
     <title>
-        {% block title %}Personal Finances{% endblock %}
+        {% block title %}
+            Personal Finances
+        {% endblock %}
     </title>
 
     <link
         rel="stylesheet"
         href="{{ url_for('static', filename='style.css') }}"
     >
+
 </head>
+
 
 <body>
 
 <div class="app-container">
 
+    <!-- SIDEBAR -->
+
     <aside class="sidebar">
 
-        <h2>Personal Finances</h2>
+        <h2>
+            Personal Finances
+        </h2>
 
         <nav>
 
@@ -50,6 +67,8 @@
     </aside>
 
 
+    <!-- MAIN CONTENT -->
+
     <main class="main-content">
 
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -64,6 +83,7 @@
 
         {% endwith %}
 
+
         {% block content %}
         {% endblock %}
 
@@ -72,11 +92,21 @@
 </div>
 
 
+<!-- SHARED DIALOGS -->
+
 {% include "components/transaction_modal.html" %}
+
 {% include "components/contract_modal.html" %}
 
+{% include "components/price_modal.html" %}
 
-<script src="{{ url_for('static', filename='main.js') }}"></script>
+
+<!-- JAVASCRIPT -->
+
+<script
+    src="{{ url_for('static', filename='main.js') }}"
+></script>
 
 </body>
+
 </html>
