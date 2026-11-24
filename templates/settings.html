@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Settings - Personal Finances{% endblock %}
+{% block content %}
+
+<header class="page-header">
+    <h1>Settings</h1>
+</header>
+
+<section class="card">
+    <h3>Add Category</h3>
+    <form
+        method="POST"
+        action="{{ url_for('create_category') }}"
+        class="settings-form"
+    >
+        <input
+            type="hidden"
+            name="csrf_token"
+            value="{{ csrf_token }}"
+        >
+        <div class="form-group">
+            <label for="category-name">Category Name</label>
+            <input
+                type="text"
+                id="category-name"
+                name="name"
+                required
+            >
+        </div>
+        <div class="form-group">
+            <label for="category-type">Type</label>
+            <select id="category-type" name="type">
+                <option value="expense">Expense</option>
+                <option value="income">Income</option>
+            </select>
+        </div>
+        <button type="submit">
+            Add Category
+        </button>
+    </form>
+</section>
+
+<section class="card section-spacing">
+    <h3>Existing Categories</h3>
+    <div class="table-container">
+        <table class="transactions-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for category in categories %}
+                <tr>
+                    <td>{{ category.name }}</td>
+                    <td>{{ category.type | capitalize }}</td>
+                    <!-- EDIT AND DELETE BUTTONS -->
+                    <td class="row-actions">
+                        <button
+                            type="button"
+                            class="secondary-button edit-category"
+                            data-id="{{ category.id }}"
+                            data-name="{{ category.name }}"
+                            data-type="{{ category.type }}"
+                        >
+                            Edit
+                        </button>
+                        <button
+                            type="button"
+                            class="danger-button delete-category"
+                            data-id="{{ category.id }}"
+                        >
+                            Delete
+                        </button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="3" class="empty-message">
+                        No categories found.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="card section-spacing">
+    <h3>Application Information</h3>
+    <p>Application: Personal Finances</p>
+    <p>Database: SQLite</p>
+    <p>Storage: Local Ubuntu computer</p>
+    <p>Cloud Synchronization: Disabled</p>
+    <p class="muted">
+        Back up finances.db regularly.
+        The database contains your financial records.
+    </p>
+</section>
+{% endblock %}

@@ -1,0 +1,198 @@
+<dialog id="contract-modal" class="modal">
+
+    <div class="modal-header">
+
+        <h2 id="contract-modal-title">
+            Add Contract
+        </h2>
+
+        <button
+            type="button"
+            class="close-button"
+            data-close-dialog
+            aria-label="Close dialog"
+        >
+            &times;
+        </button>
+
+    </div>
+
+
+    <form id="contract-form">
+
+        <div class="form-group">
+
+            <label for="contract-name">
+                Contract Name
+            </label>
+
+            <input
+                type="text"
+                id="contract-name"
+                name="name"
+                required
+            >
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label for="contract-type">
+                Type
+            </label>
+
+            <select
+                id="contract-type"
+                name="type"
+            >
+
+                <option value="expense">Expense</option>
+                <option value="income">Income</option>
+
+            </select>
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label for="contract-amount">
+                Amount (€)
+            </label>
+
+            <input
+                type="number"
+                id="contract-amount"
+                name="amount"
+                min="0.01"
+                step="0.01"
+                required
+            >
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label for="contract-category">
+                Category
+            </label>
+
+            <select
+                id="contract-category"
+                name="category_id"
+                required
+            >
+                <option value="">Select category</option>
+            </select>
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label for="contract-account">
+                Account
+            </label>
+
+            <select
+                id="contract-account"
+                name="account_id"
+                required
+            >
+                <option value="">Select account</option>
+            </select>
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label for="contract-frequency">
+                Payment Frequency
+            </label>
+
+            <select
+                id="contract-frequency"
+                name="frequency"
+            >
+
+                <option value="weekly">Weekly</option>
+                <option value="monthly" selected>Monthly</option>
+                <option value="quarterly">Quarterly</option>
+                <option value="yearly">Yearly</option>
+
+            </select>
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label for="contract-start">
+                First Payment Date
+            </label>
+
+            <input
+                type="date"
+                id="contract-start"
+                name="start_date"
+                required
+            >
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label for="contract-end">
+                End Date (Optional)
+            </label>
+
+            <input
+                type="date"
+                id="contract-end"
+                name="end_date"
+            >
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label for="contract-notes">
+                Notes
+            </label>
+
+            <textarea
+                id="contract-notes"
+                name="notes"
+                rows="3"
+            ></textarea>
+
+        </div>
+
+
+        <p class="form-error" id="contract-error" role="alert" hidden></p>
+
+
+        <div class="modal-actions">
+
+            <button
+                type="button"
+                class="secondary-button"
+                data-close-dialog
+            >
+                Cancel
+            </button>
+
+            <button type="submit">
+                Save Contract
+            </button>
+
+        </div>
+
+    </form>
+
+</dialog>

@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Accounts - Personal Finances{% endblock %}
+{% block content %}
+
+<header class="page-header">
+    <h1>Accounts</h1>
+</header>
+
+<section class="card">
+    <h3>Account Overview</h3>
+    <div class="table-container">
+        <table class="transactions-table">
+            <thead>
+                <tr>
+                    <th>Account</th>
+                    <th>Balance</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for account in accounts %}
+                <tr>
+                    <td>{{ account.name }}</td>
+                    <td class="{{ 'positive' if account.balance_cents >= 0 else 'negative' }}">
+                        {{ account.balance_cents | money }}
+                    </td>
+                    <td>
+                        {{ 'Active' if account.is_active else 'Inactive' }}
+                    </td>
+                    <td class="row-actions">
+                        <button
+                            type="button"
+                            class="secondary-button edit-account"
+                            data-id="{{ account.id }}"
+                            data-name="{{ account.name }}"
+                            data-balance="{{ account.opening_balance_cents }}"
+                        >
+                            Edit
+                        </button>
+                        <button
+                            type="button"
+                            class="danger-button delete-account"
+                            data-id="{{ account.id }}"
+                        >
+                            Delete
+                        </button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4">No accounts found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="card section-spacing">
+    <h3>Add Account</h3>
+    <form
+        method="POST"
+        action="{{ url_for('create_account') }}"
+        class="settings-form"
+    >
+        <input
+            type="hidden"
+            name="csrf_token"
+            value="{{ csrf_token }}"
+        >
+        <div class="form-group">
+            <label for="account-name">Account Name</label>
+            <input
+                type="text"
+                id="account-name"
+                name="name"
+                required
+            >
+        </div>
+        <div class="form-group">
+            <label for="opening-balance">Opening Balance (€)</label>
+            <input
+                type="number"
+                id="opening-balance"
+                name="opening_balance"
+                step="0.01"
+                value="0.00"
+                required
+            >
+        </div>
+        <button type="submit">
+            Add Account
+        </button>
+    </form>
+</section>
+{% endblock %}

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="csrf-token" content="{{ csrf_token }}">
+
+    <title>
+        {% block title %}Personal Finances{% endblock %}
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+</head>
+
+<body>
+
+<div class="app-container">
+
+    <aside class="sidebar">
+
+        <h2>Personal Finances</h2>
+
+        <nav>
+
+            {% for endpoint, label in [
+                ('dashboard', 'Dashboard'),
+                ('transactions', 'Transactions'),
+                ('contracts', 'Contracts'),
+                ('accounts', 'Accounts'),
+                ('reports', 'Reports'),
+                ('settings', 'Settings')
+            ] %}
+
+            <a
+                href="{{ url_for(endpoint) }}"
+                class="{{ 'active' if active_page == endpoint else '' }}"
+            >
+                {{ label }}
+            </a>
+
+            {% endfor %}
+
+        </nav>
+
+    </aside>
+
+
+    <main class="main-content">
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+
+            {% for category, message in messages %}
+
+                <div class="flash-message {{ category }}">
+                    {{ message }}
+                </div>
+
+            {% endfor %}
+
+        {% endwith %}
+
+        {% block content %}
+        {% endblock %}
+
+    </main>
+
+</div>
+
+
+{% include "components/transaction_modal.html" %}
+{% include "components/contract_modal.html" %}
+
+
+<script src="{{ url_for('static', filename='main.js') }}"></script>
+
+</body>
+</html>

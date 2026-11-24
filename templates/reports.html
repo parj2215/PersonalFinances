@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Reports - Personal Finances{% endblock %}
+
+{% block content %}
+
+<header class="page-header">
+    <h1>Financial Reports</h1>
+</header>
+
+
+<section class="card">
+
+    <h3>Monthly Summary</h3>
+
+    <div class="table-container">
+
+        <table class="transactions-table">
+
+            <thead>
+
+                <tr>
+
+                    {% for column, label in [
+                        ('month', 'Month'),
+                        ('income', 'Income'),
+                        ('expenses', 'Expenses'),
+                        ('saldo', 'Monthly Saldo'),
+                        ('cumulative', 'Cumulative Saldo')
+                    ] %}
+
+                    <th>
+
+                        <a href="{{ url_for(
+                            'reports',
+                            sort=column,
+                            order='asc' if sort_by == column and order == 'desc' else 'desc'
+                        ) }}">
+
+                            {{ label }}
+
+                            {% if sort_by == column %}
+                                {{ '▲' if order == 'asc' else '▼' }}
+                            {% endif %}
+
+                        </a>
+
+                    </th>
+
+                    {% endfor %}
+
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                {% for row in monthly_report %}
+
+                <tr>
+
+                    <td>{{ row.month }}</td>
+
+                    <td class="positive">
+                        {{ row.income_cents | money }}
+                    </td>
+
+                    <td class="negative">
+                        {{ row.expenses_cents | money }}
+                    </td>
+
+                    <td class="{{ 'positive' if row.saldo_cents >= 0 else 'negative' }}">
+                        {{ row.saldo_cents | money }}
+                    </td>
+
+                    <td class="{{ 'positive' if row.cumulative_cents >= 0 else 'negative' }}">
+                        {{ row.cumulative_cents | money }}
+                    </td>
+
+                </tr>
+
+                {% else %}
+
+                <tr>
+
+                    <td colspan="5" class="empty-message">
+                        No financial data available.
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</section>
+
+{% endblock %}
