@@ -1,17 +1,10 @@
 {% extends "base.html" %}
-
 {% block title %}Dashboard - Personal Finances{% endblock %}
-
 {% block content %}
-
 <header class="page-header">
-
     <h1>Dashboard</h1>
-
     <form method="GET" action="{{ url_for('dashboard') }}">
-
         <label for="dashboard-month">Month:</label>
-
         <input
             type="month"
             id="dashboard-month"
@@ -19,111 +12,63 @@
             value="{{ selected_month }}"
             onchange="this.form.submit()"
         >
-
     </form>
-
     <div class="header-actions">
-
         <button type="button" class="open-transaction-modal">
             + Add Transaction
         </button>
-
         <button type="button" class="open-contract-modal">
             + Add Contract
         </button>
-
     </div>
-
 </header>
-
-
 <section class="dashboard-cards">
-
     <article class="card">
-
         <h3>Total Balance</h3>
-
         <p class="{{ 'negative' if total_balance < 0 else 'positive' }}">
             {{ total_balance | money }}
         </p>
-
     </article>
-
-
     <article class="card">
-
         <h3>Monthly Income</h3>
-
         <p class="positive">
             {{ monthly_income | money }}
         </p>
-
     </article>
-
-
     <article class="card">
-
         <h3>Monthly Expenses</h3>
-
         <p class="negative">
             {{ monthly_expenses | money }}
         </p>
-
     </article>
-
-
     <article class="card">
-
         <h3>Monthly Saldo</h3>
-
         <p class="{{ 'positive' if monthly_saldo >= 0 else 'negative' }}">
             {{ monthly_saldo | money }}
         </p>
-
     </article>
-
 </section>
-
-
 <section class="card cumulative-card">
-
     <h3>Cumulative Saldo</h3>
-
     <p class="{{ 'positive' if cumulative_saldo >= 0 else 'negative' }}">
         {{ cumulative_saldo | money }}
     </p>
-
 </section>
-
-
 <section class="card account-overview">
-
     <h3>Account Balances</h3>
-
     <div class="account-list">
-
         {% for account in accounts %}
-
         <div class="account-row">
-
             <span>
                 {{ account.name }}
             </span>
-
             <strong class="{{ 'negative' if account.balance_cents < 0 else 'positive' }}">
                 {{ account.balance_cents | money }}
             </strong>
-
         </div>
-
         {% else %}
-
         <p>No accounts have been created yet.</p>
-
         {% endfor %}
-
     </div>
-
 </section>
-
 {% endblock %}

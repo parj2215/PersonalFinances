@@ -1,9 +1,5 @@
-/* ==================================================
-   THEME VARIABLES
-================================================== */
-
+/* THEME VARIABLES */
 :root {
-
     --bg-primary: #0f1117;
     --bg-secondary: #181c25;
     --bg-sidebar: #131720;
@@ -19,14 +15,9 @@
     --positive: #22c55e;
     --negative: #ef4444;
     --warning: #f59e0b;
-
 }
 
-
-/* ==================================================
-   GLOBAL
-================================================== */
-
+/* GLOBAL */
 * {
     box-sizing: border-box;
 }
@@ -86,21 +77,13 @@ a {
     color: var(--accent);
 }
 
-
-/* ==================================================
-   APPLICATION LAYOUT
-================================================== */
-
+/* APPLICATION LAYOUT */
 .app-container {
     display: flex;
     min-height: 100vh;
 }
 
-
-/* ==================================================
-   SIDEBAR
-================================================== */
-
+/* SIDEBAR */
 .sidebar {
     width: 240px;
     flex-shrink: 0;
@@ -149,11 +132,7 @@ a {
     color: white;
 }
 
-
-/* ==================================================
-   MAIN CONTENT
-================================================== */
-
+/* MAIN CONTENT */
 .main-content {
     flex: 1;
     min-width: 0;
@@ -161,11 +140,7 @@ a {
     padding: 35px;
 }
 
-
-/* ==================================================
-   PAGE HEADER
-================================================== */
-
+/* PAGE HEADER */
 .page-header {
     display: flex;
 
@@ -190,11 +165,7 @@ a {
     gap: 12px;
 }
 
-
-/* ==================================================
-   DASHBOARD CARDS
-================================================== */
-
+/* DASHBOARD CARDS */
 .dashboard-cards {
     display: grid;
 
@@ -235,11 +206,7 @@ a {
     overflow-wrap: anywhere;
 }
 
-
-/* ==================================================
-   FINANCIAL COLORS
-================================================== */
-
+/* FINANCIAL COLORS */
 .positive {
     color: var(--positive) !important;
 }
@@ -252,11 +219,7 @@ a {
     color: var(--text-secondary);
 }
 
-
-/* ==================================================
-   DASHBOARD SECTIONS
-================================================== */
-
+/* DASHBOARD SECTIONS */
 .cumulative-card {
     margin-top: 25px;
 }
@@ -292,11 +255,7 @@ a {
     font-size: 16px;
 }
 
-
-/* ==================================================
-   TABLE TOOLBAR
-================================================== */
-
+/* TABLE TOOLBAR */
 .table-toolbar {
     display: flex;
 
@@ -322,11 +281,7 @@ a {
     gap: 10px;
 }
 
-
-/* ==================================================
-   INPUTS
-================================================== */
-
+/* INPUTS */
 input,
 select,
 textarea {
@@ -347,11 +302,7 @@ textarea {
     resize: vertical;
 }
 
-
-/* ==================================================
-   TABLES
-================================================== */
-
+/* TABLES */
 .table-container {
     width: 100%;
     overflow-x: auto;
@@ -415,11 +366,7 @@ textarea {
     padding: 8px 12px;
 }
 
-
-/* ==================================================
-   SECONDARY BUTTONS
-================================================== */
-
+/* SECONDARY BUTTONS */
 .secondary-button {
     background-color: var(--border);
 }
@@ -436,11 +383,7 @@ textarea {
     background-color: #991b1b;
 }
 
-
-/* ==================================================
-   MODALS
-================================================== */
-
+/* MODALS */
 .modal {
     width: min(500px, calc(100% - 30px));
 
@@ -487,11 +430,7 @@ textarea {
     background-color: var(--border);
 }
 
-
-/* ==================================================
-   FORMS
-================================================== */
-
+/* FORMS */
 .form-group {
     display: flex;
     flex-direction: column;
@@ -543,20 +482,12 @@ textarea {
     display: none;
 }
 
-
-/* ==================================================
-   SECTION SPACING
-================================================== */
-
+/* SECTION SPACING */
 .section-spacing {
     margin-top: 25px;
 }
 
-
-/* ==================================================
-   STATUS BADGES
-================================================== */
-
+/* STATUS BADGES */
 .badge {
     display: inline-block;
 
@@ -583,11 +514,7 @@ textarea {
     color: #bfdbfe;
 }
 
-
-/* ==================================================
-   FLASH MESSAGES
-================================================== */
-
+/* FLASH MESSAGES */
 .flash-message {
     padding: 14px 18px;
 
@@ -606,22 +533,14 @@ textarea {
     color: #fecaca;
 }
 
-
-/* ==================================================
-   RESPONSIVE DESIGN
-================================================== */
-
+/* RESPONSIVE DESIGN */
 @media (max-width: 1100px) {
-
     .dashboard-cards {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
-
 }
 
-
 @media (max-width: 650px) {
-
     .app-container {
         flex-direction: column;
     }
@@ -651,5 +570,33 @@ textarea {
     .modal {
         padding: 18px;
     }
+}
+/* v0.2 shared dialogs and notifications */
+.modal { color: var(--text-primary); background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; width: min(94vw, 520px); max-height: 90vh; overflow-y: auto; padding: 24px; }
+.modal::backdrop { background: rgba(0,0,0,.7); }
+.modal h2 { margin-top: 0; }
+.modal-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 12px; margin-top: 20px; }
+.form-error { color: #fca5a5; }
+#toast-region { position: fixed; bottom: 24px; right: 24px; z-index: 200; display: grid; gap: 8px; max-width: min(420px, 90vw); }
+.toast { background: #1e293b; color: var(--text-primary); border: 1px solid var(--border); padding: 14px 18px; border-radius: 8px; box-shadow: 0 6px 20px #0008; }
+.toast.error { border-color: var(--negative); }
+.backup-download { display: inline-block; border-radius: 8px; padding: 10px 14px; background: #334155; color: white; text-decoration: none; }
 
+/* Fix dropdown appearance in GTK/WebKit desktop windows. */
+select {
+    -webkit-appearance: none;
+    appearance: none;
+    color-scheme: dark;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='%2394a3b8' d='m3 6 5 5 5-5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 14px;
+    padding-right: 36px;
+}
+
+select option {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
 }

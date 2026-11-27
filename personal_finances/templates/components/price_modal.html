@@ -2,13 +2,10 @@
     id="price-modal"
     class="modal"
 >
-
     <div class="modal-header">
-
         <h2>
             Change Contract Price
         </h2>
-
         <button
             type="button"
             class="close-button"
@@ -17,73 +14,46 @@
         >
             &times;
         </button>
-
     </div>
-
-
     <form id="price-form">
-
         <p id="price-contract-name"></p>
-
-
         <div class="form-group">
-
             <label for="new-contract-price">
                 New Price (€)
             </label>
-
             <input
                 type="number"
                 id="new-contract-price"
                 name="amount"
-
                 min="0.01"
                 step="0.01"
-
                 required
             >
-
         </div>
-
-
         <div class="form-group">
-
             <label for="price-valid-from">
                 Effective From
             </label>
-
             <input
                 type="date"
                 id="price-valid-from"
                 name="valid_from"
-
                 required
             >
-
         </div>
-
-
         <p class="muted">
-
             The new price applies to scheduled payments
             from the effective date onward.
-
             Previously confirmed transactions
             will not be modified.
-
         </p>
-
-
         <p
             class="form-error"
             id="price-error"
             role="alert"
             hidden
         ></p>
-
-
         <div class="modal-actions">
-
             <button
                 type="button"
                 class="secondary-button"
@@ -91,54 +61,33 @@
             >
                 Cancel
             </button>
-
             <button type="submit">
                 Save Price
             </button>
-
         </div>
-
     </form>
-
-
     <!-- PRICE HISTORY -->
-
     <section class="section-spacing">
-
         <h3>Price History</h3>
-
         <div class="table-container">
-
             <table class="transactions-table">
-
                 <thead>
-
                     <tr>
                         <th>Effective From</th>
                         <th>Price</th>
                     </tr>
-
                 </thead>
-
                 <tbody id="price-history-body">
-
                     <tr>
-
                         <td
                             colspan="2"
                             class="empty-message"
                         >
                             Loading price history...
                         </td>
-
                     </tr>
-
                 </tbody>
-
             </table>
-
         </div>
-
     </section>
-
 </dialog>

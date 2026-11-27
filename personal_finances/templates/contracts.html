@@ -1,44 +1,30 @@
 {% extends "base.html" %}
-
 {% block title %}
 Contracts - Personal Finances
 {% endblock %}
-
 {% block content %}
-
 <header class="page-header">
-
     <h1>Contracts</h1>
-
     <button
         type="button"
         class="open-contract-modal"
     >
         + Add Contract
     </button>
-
 </header>
-
-
 <!-- ================================================
      MONTHLY PAYMENTS
 ================================================ -->
-
 <section class="card">
-
     <div class="table-toolbar">
-
         <h3>Monthly Payments</h3>
-
         <form
             method="GET"
             action="{{ url_for('contracts') }}"
         >
-
             <label for="contract-month">
                 Month:
             </label>
-
             <input
                 type="month"
                 id="contract-month"
@@ -46,20 +32,12 @@ Contracts - Personal Finances
                 value="{{ selected_month }}"
                 onchange="this.form.submit()"
             >
-
         </form>
-
     </div>
-
-
     <div class="table-container">
-
         <table class="transactions-table">
-
             <thead>
-
                 <tr>
-
                     {% for column, label in [
                         ('date', 'Due Date'),
                         ('name', 'Contract'),
@@ -68,170 +46,106 @@ Contracts - Personal Finances
                         ('amount', 'Amount'),
                         ('status', 'Status')
                     ] %}
-
                     <th>
-
                         <a href="{{ url_for(
                             'contracts',
                             month=selected_month,
                             payment_sort=column,
                             payment_order='asc' if payment_sort == column and payment_order == 'desc' else 'desc'
                         ) }}">
-
                             {{ label }}
-
                             {% if payment_sort == column %}
-
                                 {{ '▲' if payment_order == 'asc' else '▼' }}
-
                             {% endif %}
-
                         </a>
-
                     </th>
-
                     {% endfor %}
-
                     <th>Action</th>
-
                 </tr>
-
             </thead>
-
-
             <tbody>
-
                 {% for payment in schedule %}
-
                 <tr>
-
                     <td>
                         {{ payment.due_date }}
                     </td>
-
                     <td>
                         {{ payment.name }}
                     </td>
-
                     <td>
                         {{ payment.category }}
                     </td>
-
                     <td>
                         {{ payment.account }}
                     </td>
-
                     <td class="{{ 'positive' if payment.type == 'income' else 'negative' }}">
-
                         {{ '+' if payment.type == 'income' else '-' }}
-
                         {{ payment.amount_cents | money }}
-
                         {% if payment.paid
                               and payment.amount_cents != payment.scheduled_amount_cents %}
-
                             <span
                                 class="muted"
                                 title="Actual amount differs from scheduled price"
                             >
                                 (Adjusted)
                             </span>
-
                         {% endif %}
-
                     </td>
-
                     <td>
-
                         {% if payment.paid %}
-
                             <span class="badge success">
                                 Paid
                             </span>
-
                         {% elif payment.due_date > today %}
-
                             <span class="badge upcoming">
                                 Upcoming
                             </span>
-
                         {% else %}
-
                             <span class="badge pending">
                                 Pending
                             </span>
-
                         {% endif %}
-
                     </td>
-
                     <td>
-
                         {% if not payment.paid
                               and payment.due_date <= today %}
-
                             <button
                                 type="button"
                                 class="confirm-payment"
-
                                 data-contract-id="{{ payment.contract_id }}"
                                 data-date="{{ payment.due_date }}"
                                 data-amount="{{ payment.amount_cents }}"
                             >
                                 Confirm
                             </button>
-
                         {% endif %}
-
                     </td>
-
                 </tr>
-
                 {% else %}
-
                 <tr>
-
                     <td
                         colspan="7"
                         class="empty-message"
                     >
                         No scheduled payments for this month.
                     </td>
-
                 </tr>
-
                 {% endfor %}
-
             </tbody>
-
         </table>
-
     </div>
-
 </section>
-
-
 <!-- ================================================
      ALL CONTRACTS
 ================================================ -->
-
 <section class="card section-spacing">
-
     <div class="table-toolbar">
-
         <h3>All Contracts</h3>
-
     </div>
-
-
     <div class="table-container">
-
         <table class="transactions-table">
-
             <thead>
-
                 <tr>
-
                     {% for column, label in [
                         ('name', 'Name'),
                         ('type', 'Type'),
@@ -242,188 +156,106 @@ Contracts - Personal Finances
                         ('start', 'Start'),
                         ('end', 'End')
                     ] %}
-
                     <th>
-
                         <a href="{{ url_for(
                             'contracts',
                             month=selected_month,
                             sort=column,
                             order='asc' if sort_by == column and order == 'desc' else 'desc'
                         ) }}">
-
                             {{ label }}
-
                             {% if sort_by == column %}
-
                                 {{ '▲' if order == 'asc' else '▼' }}
-
                             {% endif %}
-
                         </a>
-
                     </th>
-
                     {% endfor %}
-
                     <th>Status</th>
                     <th>Actions</th>
-
                 </tr>
-
             </thead>
-
-
             <tbody>
-
                 {% for contract in contracts %}
-
                 <tr>
-
                     <td>
                         {{ contract.name }}
                     </td>
-
                     <td>
                         {{ contract.type | capitalize }}
                     </td>
-
                     <td>
                         {{ contract.category }}
                     </td>
-
                     <td>
                         {{ contract.account }}
                     </td>
-
                     <td class="{{ 'positive' if contract.type == 'income' else 'negative' }}">
-
                         {{ contract.current_amount_cents | money }}
-
                     </td>
-
                     <td>
                         {{ contract.frequency | capitalize }}
                     </td>
-
                     <td>
                         {{ contract.start_date }}
                     </td>
-
                     <td>
                         {{ contract.end_date or '—' }}
                     </td>
-
                     <td>
-
-                        {% if contract.cancelled_on %}
-
-                            <span class="badge pending">
-                                Cancelled
-                            </span>
-
-                        {% elif contract.end_date
+                        {% if contract.end_date
                               and contract.end_date < today %}
-
                             <span class="badge pending">
                                 Expired
                             </span>
-
                         {% elif contract.start_date > today %}
-
                             <span class="badge upcoming">
                                 Upcoming
                             </span>
-
                         {% else %}
-
                             <span class="badge success">
                                 Active
                             </span>
-
                         {% endif %}
-
                     </td>
-
-
                     <!-- ACTION BUTTONS -->
-
                     <td class="row-actions">
-
                         <button
                             type="button"
                             class="secondary-button edit-contract"
-
                             data-record="{{ dict(contract) | tojson | forceescape }}"
                         >
                             Edit
                         </button>
-
-
                         <button
                             type="button"
                             class="secondary-button change-contract-price"
-
                             data-id="{{ contract.id }}"
                             data-name="{{ contract.name }}"
                             data-amount="{{ contract.current_amount_cents }}"
-
-                            {% if contract.cancelled_on %}
-                                disabled
-                            {% endif %}
                         >
                             Change Price
                         </button>
-
-
-                        {% if not contract.cancelled_on %}
-
-                            <button
-                                type="button"
-                                class="danger-button cancel-contract"
-
-                                data-id="{{ contract.id }}"
-                            >
-                                Cancel
-                            </button>
-
-                        {% endif %}
-
-
                         <button
                             type="button"
                             class="danger-button delete-contract"
-
                             data-id="{{ contract.id }}"
                         >
                             Delete
                         </button>
-
                     </td>
-
                 </tr>
-
                 {% else %}
-
                 <tr>
-
                     <td
                         colspan="11"
                         class="empty-message"
                     >
                         No contracts have been created.
                     </td>
-
                 </tr>
-
                 {% endfor %}
-
             </tbody>
-
         </table>
-
     </div>
-
 </section>
-
 {% endblock %}

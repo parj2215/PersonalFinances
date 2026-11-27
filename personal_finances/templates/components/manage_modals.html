@@ -1,0 +1,45 @@
+<!-- Reusable dark dialogs for account/category editing and payment overrides. -->
+<dialog id="account-edit-dialog" class="modal" aria-labelledby="account-dialog-title">
+  <h2 id="account-dialog-title">Edit account</h2>
+  <form id="account-edit-form">
+    <input type="hidden" name="id">
+    <div class="form-group"><label for="edit-account-name">Account name</label>
+      <input id="edit-account-name" name="name" required maxlength="100"></div>
+    <div class="form-group"><label for="edit-account-balance">Opening balance (€)</label>
+      <input id="edit-account-balance" name="opening_balance" type="number" step="0.01" required></div>
+    <p class="form-error" id="account-edit-error" hidden></p>
+    <div class="modal-actions"><button type="button" class="secondary-button" data-close-dialog>Cancel</button>
+    <button type="submit">Save changes</button></div>
+  </form>
+</dialog>
+<dialog id="category-edit-dialog" class="modal" aria-labelledby="category-dialog-title">
+  <h2 id="category-dialog-title">Edit category</h2>
+  <form id="category-edit-form">
+    <input type="hidden" name="id">
+    <div class="form-group"><label for="edit-category-name">Category name</label>
+      <input id="edit-category-name" name="name" required maxlength="100"></div>
+    <div class="form-group"><label for="edit-category-type">Type</label>
+      <select id="edit-category-type" name="type"><option value="expense">Expense</option><option value="income">Income</option></select></div>
+    <p class="form-error" id="category-edit-error" hidden></p>
+    <div class="modal-actions"><button type="button" class="secondary-button" data-close-dialog>Cancel</button>
+    <button type="submit">Save changes</button></div>
+  </form>
+</dialog>
+<dialog id="payment-dialog" class="modal" aria-labelledby="payment-dialog-title">
+  <h2 id="payment-dialog-title">Confirm payment</h2>
+  <form id="payment-form">
+    <p id="payment-due-label"></p>
+    <div class="form-group"><label for="payment-actual-amount">Payment amount (€)</label>
+      <input id="payment-actual-amount" name="amount" type="number" min="0.01" step="0.01" required></div>
+    <p class="muted">This adjusts only this payment, not the contract price history.</p>
+    <p class="form-error" id="payment-error" hidden></p>
+    <div class="modal-actions"><button type="button" class="secondary-button" data-close-dialog>Cancel</button>
+    <button type="submit">Record payment</button></div>
+  </form>
+</dialog>
+<dialog id="confirm-dialog" class="modal" aria-labelledby="confirm-dialog-title">
+  <h2 id="confirm-dialog-title">Please confirm</h2><p id="confirm-dialog-text"></p>
+  <div class="modal-actions"><button type="button" class="secondary-button" id="confirm-no">Cancel</button>
+  <button type="button" class="danger-button" id="confirm-yes">Confirm</button></div>
+</dialog>
+<div id="toast-region" role="status" aria-live="polite"></div>

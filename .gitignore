@@ -1,79 +1,32 @@
-# ==================================================
-# PYTHON
-# ==================================================
-
+# Python and virtual environments
 __pycache__/
 *.py[cod]
-*.egg-info/
-.pytest_cache/
-.mypy_cache/
-
-
-# ==================================================
-# VIRTUAL ENVIRONMENTS
-# ==================================================
-
 .venv/
 venv/
-env/
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+build/
+dist/
 
-
-# ==================================================
-# DATABASES
-# ==================================================
-
-*.db
-*.sqlite
-*.sqlite3
-
-*.db-wal
-*.db-shm
-
-*.sqlite-wal
-*.sqlite-shm
-
-*.sqlite3-wal
-*.sqlite3-shm
-
-
-# ==================================================
-# PRIVATE FINANCIAL DATA
-# ==================================================
-
-backups/
-data/
-exports/
-
-*.ods
-*.xlsx
-*.xls
-*.csv
-
-
-# ==================================================
-# SECRETS AND ENVIRONMENT VARIABLES
-# ==================================================
-
-.flask_secret
+# Local secrets and financial information
 .env
 .env.*
 !.env.example
+.flask_secret
+flask_secret
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+backups/
+*.ods
+*.xlsx
 
-*.pem
-*.key
-
-
-# ==================================================
-# IDE
-# ==================================================
-
-.vscode/
+# Local tools and editors
 .idea/
-
-
-# ==================================================
-# OPERATING SYSTEM
-# ==================================================
-
+.vscode/
+*.desktop
 .DS_Store
-Thumbs.db
+*~

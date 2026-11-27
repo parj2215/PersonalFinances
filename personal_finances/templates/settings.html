@@ -1,11 +1,24 @@
 {% extends "base.html" %}
-{% block title %}Settings - Personal Finances{% endblock %}
+{% block title %}Settings - Personal Finances<section class="card section-spacing">
+    <div class="table-toolbar"><h3>Database Backups</h3>
+        <button type="button" id="create-backup">Create backup</button></div>
+    <p class="muted">Automatic backups are made when you open the application if 14 days have passed since the last automatic backup. Manual backups do not reset this schedule.</p>
+    <div class="table-container"><table class="transactions-table"><thead>
+        <tr><th>Created</th><th>Type</th><th>Size</th><th>Actions</th></tr>
+    </thead><tbody>
+    {% for backup in backups %}
+      <tr><td>{{ backup.created }}</td><td>{{ backup.kind | capitalize }}</td>
+          <td>{{ (backup.size / 1024) | round(1) }} KiB</td>
+          <td class="row-actions"><a class="secondary-button backup-download" href="{{ url_for('download_backup', filename=backup.name) }}">Download</a>
+              <button type="button" class="danger-button delete-backup" data-name="{{ backup.name }}">Delete</button></td></tr>
+    {% else %}<tr><td colspan="4">No backups yet.</td></tr>{% endfor %}
+    </tbody></table></div>
+</section>
+{% endblock %}
 {% block content %}
-
 <header class="page-header">
     <h1>Settings</h1>
 </header>
-
 <section class="card">
     <h3>Add Category</h3>
     <form
@@ -39,7 +52,6 @@
         </button>
     </form>
 </section>
-
 <section class="card section-spacing">
     <h3>Existing Categories</h3>
     <div class="table-container">
@@ -87,16 +99,27 @@
         </table>
     </div>
 </section>
-
 <section class="card section-spacing">
     <h3>Application Information</h3>
     <p>Application: Personal Finances</p>
     <p>Database: SQLite</p>
     <p>Storage: Local Ubuntu computer</p>
     <p>Cloud Synchronization: Disabled</p>
-    <p class="muted">
-        Back up finances.db regularly.
-        The database contains your financial records.
-    </p>
+    <p class="muted">Database and backups are stored in your local application-data directory.</p>
+</section>
+<section class="card section-spacing">
+    <div class="table-toolbar"><h3>Database Backups</h3>
+        <button type="button" id="create-backup">Create backup</button></div>
+    <p class="muted">Automatic backups are made when you open the application if 14 days have passed since the last automatic backup. Manual backups do not reset this schedule.</p>
+    <div class="table-container"><table class="transactions-table"><thead>
+        <tr><th>Created</th><th>Type</th><th>Size</th><th>Actions</th></tr>
+    </thead><tbody>
+    {% for backup in backups %}
+      <tr><td>{{ backup.created }}</td><td>{{ backup.kind | capitalize }}</td>
+          <td>{{ (backup.size / 1024) | round(1) }} KiB</td>
+          <td class="row-actions"><a class="secondary-button backup-download" href="{{ url_for('download_backup', filename=backup.name) }}">Download</a>
+              <button type="button" class="danger-button delete-backup" data-name="{{ backup.name }}">Delete</button></td></tr>
+    {% else %}<tr><td colspan="4">No backups yet.</td></tr>{% endfor %}
+    </tbody></table></div>
 </section>
 {% endblock %}

@@ -1,0 +1,1 @@
+"""Local-first finance manager."""

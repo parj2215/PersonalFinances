@@ -1,30 +1,17 @@
 {% extends "base.html" %}
-
 {% block title %}Transactions - Personal Finances{% endblock %}
-
 {% block content %}
-
 <header class="page-header">
-
     <h1>Transactions</h1>
-
     <button type="button" class="open-transaction-modal">
         + Add Transaction
     </button>
-
 </header>
-
-
 <section class="card">
-
     <div class="table-toolbar">
-
         <h3>Transaction History</h3>
-
         <form method="GET" action="{{ url_for('transactions') }}">
-
             <label for="month">Month:</label>
-
             <input
                 type="month"
                 id="month"
@@ -32,32 +19,22 @@
                 value="{{ selected_month }}"
                 onchange="this.form.submit()"
             >
-
             <input
                 type="hidden"
                 name="sort"
                 value="{{ sort_by }}"
             >
-
             <input
                 type="hidden"
                 name="order"
                 value="{{ order }}"
             >
-
         </form>
-
     </div>
-
-
     <div class="table-container">
-
         <table class="transactions-table">
-
             <thead>
-
                 <tr>
-
                     {% for column, label in [
                         ('date', 'Date'),
                         ('description', 'Description'),
@@ -66,87 +43,52 @@
                         ('account', 'Account'),
                         ('amount', 'Amount')
                     ] %}
-
                     <th>
-
                         <a href="{{ url_for(
                             'transactions',
                             month=selected_month,
                             sort=column,
                             order='asc' if sort_by == column and order == 'desc' else 'desc'
                         ) }}">
-
                             {{ label }}
-
                             {% if sort_by == column %}
                                 {{ '▲' if order == 'asc' else '▼' }}
                             {% endif %}
-
                         </a>
-
                     </th>
-
                     {% endfor %}
-
                     <th>Actions</th>
-
                 </tr>
-
             </thead>
-
-
             <tbody>
-
                 {% for transaction in transactions %}
-
                 <tr>
-
                     <td>{{ transaction.date }}</td>
-
                     <td>{{ transaction.description }}</td>
-
                     <td>{{ transaction.type | capitalize }}</td>
-
                     <td>
                         {{ transaction.category or '-' }}
                     </td>
-
                     <td>
-
                         {% if transaction.type == 'transfer' %}
-
                             {{ transaction.from_account }}
                             →
                             {{ transaction.to_account }}
-
                         {% elif transaction.type == 'income' %}
-
                             {{ transaction.to_account }}
-
                         {% else %}
-
                             {{ transaction.from_account }}
-
                         {% endif %}
-
                     </td>
-
-
                     <td class="{{ 'positive' if transaction.type == 'income' else 'negative' if transaction.type == 'expense' else '' }}">
-
                         {% if transaction.type == 'income' %}
                             +
                         {% elif transaction.type == 'expense' %}
                             -
                         {% endif %}
-
                         {{ transaction.amount_cents | money }}
-
                     </td>
-
-
                     <td class="row-actions">
-
                         <button
                             type="button"
                             class="secondary-button edit-transaction"
@@ -154,7 +96,6 @@
                         >
                             Edit
                         </button>
-
                         <button
                             type="button"
                             class="danger-button delete-transaction"
@@ -162,29 +103,17 @@
                         >
                             Delete
                         </button>
-
                     </td>
-
                 </tr>
-
                 {% else %}
-
                 <tr>
-
                     <td colspan="7" class="empty-message">
                         No transactions found for this month.
                     </td>
-
                 </tr>
-
                 {% endfor %}
-
             </tbody>
-
         </table>
-
     </div>
-
 </section>
-
 {% endblock %}

@@ -5,241 +5,21 @@ from pathlib import Path
 from datetime import date, timedelta
 from contextlib import closing
 
-
-BASE_DIR = Path(__file__).resolve().parent
-DATABASE_PATH = BASE_DIR / "finances.db"
-
-
-# ==================================================
-# DATABASE CONNECTION
-# ==================================================
+from .storage import DATABASE_PATH, prepare_storage
+from .migrations import migrate
 
 def get_connection():
-
-    connection = sqlite3.connect(DATABASE_PATH)
-
+    prepare_storage()
+    connection = sqlite3.connect(DATABASE_PATH, timeout=10)
     connection.execute("PRAGMA foreign_keys = ON")
     connection.row_factory = sqlite3.Row
-
     return connection
 
-
-# ==================================================
-# DATABASE INITIALIZATION
-# ==================================================
-
 def initialize_database():
-
     with closing(get_connection()) as connection:
-        with connection:
+        migrate(connection)
 
-            connection.execute("""
-                CREATE TABLE IF NOT EXISTS accounts (
-                    id INTEGER PRIMARY KEY,
-                    name TEXT NOT NULL UNIQUE,
-                    opening_balance_cents INTEGER NOT NULL DEFAULT 0,
-                    is_active INTEGER NOT NULL DEFAULT 1
-                        CHECK (is_active IN (0, 1))
-                )
-            """)
-
-            connection.execute("""
-                CREATE TABLE IF NOT EXISTS categories (
-                    id INTEGER PRIMARY KEY,
-                    name TEXT NOT NULL UNIQUE,
-                    type TEXT NOT NULL
-                        CHECK (type IN ('income', 'expense'))
-                )
-            """)
-
-            connection.execute("""
-                CREATE TABLE IF NOT EXISTS transactions (
-                    id INTEGER PRIMARY KEY,
-
-                    date TEXT NOT NULL,
-                    description TEXT NOT NULL,
-
-                    type TEXT NOT NULL
-                        CHECK (type IN ('income', 'expense', 'transfer')),
-
-                    amount_cents INTEGER NOT NULL
-                        CHECK (amount_cents > 0),
-
-                    category_id INTEGER,
-                    from_account_id INTEGER,
-                    to_account_id INTEGER,
-
-                    FOREIGN KEY (category_id)
-                        REFERENCES categories(id),
-
-                    FOREIGN KEY (from_account_id)
-                        REFERENCES accounts(id),
-
-                    FOREIGN KEY (to_account_id)
-                        REFERENCES accounts(id),
-
-                    CHECK (
-                        (
-                            type = 'income'
-                            AND to_account_id IS NOT NULL
-                            AND from_account_id IS NULL
-                            AND category_id IS NOT NULL
-                        )
-                        OR
-                        (
-                            type = 'expense'
-                            AND from_account_id IS NOT NULL
-                            AND to_account_id IS NULL
-                            AND category_id IS NOT NULL
-                        )
-                        OR
-                        (
-                            type = 'transfer'
-                            AND from_account_id IS NOT NULL
-                            AND to_account_id IS NOT NULL
-                            AND from_account_id != to_account_id
-                            AND category_id IS NULL
-                        )
-                    )
-                )
-            """)
-
-            connection.execute("""
-                CREATE TABLE IF NOT EXISTS contracts (
-                    id INTEGER PRIMARY KEY,
-
-                    name TEXT NOT NULL,
-
-                    type TEXT NOT NULL
-                        CHECK (type IN ('income', 'expense')),
-
-                    amount_cents INTEGER NOT NULL
-                        CHECK (amount_cents > 0),
-
-                    category_id INTEGER NOT NULL,
-                    account_id INTEGER NOT NULL,
-
-                    frequency TEXT NOT NULL
-                        CHECK (
-                            frequency IN (
-                                'weekly',
-                                'monthly',
-                                'quarterly',
-                                'yearly'
-                            )
-                        ),
-
-                    start_date TEXT NOT NULL,
-                    end_date TEXT,
-                    cancelled_on TEXT,
-
-                    notes TEXT NOT NULL DEFAULT '',
-
-                    FOREIGN KEY (category_id)
-                        REFERENCES categories(id),
-
-                    FOREIGN KEY (account_id)
-                        REFERENCES accounts(id),
-
-                    CHECK (
-                        end_date IS NULL
-                        OR end_date >= start_date
-                    )
-                )
-            """)
-
-            connection.execute("""
-                CREATE TABLE IF NOT EXISTS contract_payments (
-                    id INTEGER PRIMARY KEY,
-
-                    contract_id INTEGER NOT NULL,
-                    due_date TEXT NOT NULL,
-
-                    transaction_id INTEGER NOT NULL UNIQUE,
-
-                    FOREIGN KEY (contract_id)
-                        REFERENCES contracts(id),
-
-                    FOREIGN KEY (transaction_id)
-                        REFERENCES transactions(id)
-                        ON DELETE CASCADE,
-
-                    UNIQUE (contract_id, due_date)
-                )
-            """)
-
-            # NEW: Contract price history.
-            #
-            # Every row defines a price that becomes valid
-            # on a particular date.
-            #
-            # Different contracts can have different
-            # numbers of price changes.
-
-            connection.execute("""
-                CREATE TABLE IF NOT EXISTS contract_prices (
-                    id INTEGER PRIMARY KEY,
-
-                    contract_id INTEGER NOT NULL,
-
-                    amount_cents INTEGER NOT NULL
-                        CHECK (amount_cents > 0),
-
-                    valid_from TEXT NOT NULL,
-
-                    FOREIGN KEY (contract_id)
-                        REFERENCES contracts(id)
-                        ON DELETE CASCADE,
-
-                    UNIQUE (contract_id, valid_from)
-                )
-            """)
-
-            connection.execute("""
-                CREATE INDEX IF NOT EXISTS
-                    idx_contract_prices_lookup
-
-                ON contract_prices (
-                    contract_id,
-                    valid_from
-                )
-            """)
-
-            # Migration:
-            #
-            # Existing contracts already have an amount
-            # in contracts.amount_cents.
-            #
-            # Add that amount as their initial historical
-            # price only when no price history exists.
-            #
-            # This can safely run multiple times.
-
-            connection.execute("""
-                INSERT INTO contract_prices (
-                    contract_id,
-                    amount_cents,
-                    valid_from
-                )
-
-                SELECT
-                    c.id,
-                    c.amount_cents,
-                    c.start_date
-
-                FROM contracts AS c
-
-                WHERE NOT EXISTS (
-                    SELECT 1
-                    FROM contract_prices AS p
-                    WHERE p.contract_id = c.id
-                )
-            """)
-
-
-# ==================================================
-# ACCOUNTS
-# ==================================================
+# Accounts
 
 def get_accounts(active_only=False):
 
@@ -261,7 +41,6 @@ def get_accounts(active_only=False):
     with closing(get_connection()) as connection:
         return connection.execute(query).fetchall()
 
-
 def add_account(name, opening_balance_cents):
 
     with closing(get_connection()) as connection:
@@ -275,12 +54,7 @@ def add_account(name, opening_balance_cents):
                 VALUES (?, ?)
             """, (name, opening_balance_cents))
 
-
-def update_account(
-    account_id,
-    name,
-    opening_balance_cents
-):
+def update_account(account_id, name, opening_balance_cents):
 
     with closing(get_connection()) as connection:
         with connection:
@@ -294,13 +68,9 @@ def update_account(
 
                 WHERE id = ?
             """, (
-                name,
-                opening_balance_cents,
-                account_id
-            ))
+                name, opening_balance_cents, account_id))
 
             return cursor.rowcount == 1
-
 
 def delete_account(account_id):
 
@@ -327,7 +97,6 @@ def delete_account(account_id):
             """, (account_id,))
 
             return cursor.rowcount == 1
-
 
 def get_account_balances(as_of_date):
 
@@ -369,10 +138,7 @@ def get_account_balances(as_of_date):
             ORDER BY a.name
         """, (as_of_date,)).fetchall()
 
-
-# ==================================================
-# CATEGORIES
-# ==================================================
+# Categories
 
 def get_categories():
 
@@ -389,7 +155,6 @@ def get_categories():
             ORDER BY name
         """).fetchall()
 
-
 def add_category(name, category_type):
 
     with closing(get_connection()) as connection:
@@ -403,12 +168,7 @@ def add_category(name, category_type):
                 VALUES (?, ?)
             """, (name, category_type))
 
-
-def update_category(
-    category_id,
-    name,
-    category_type
-):
+def update_category(category_id, name, category_type):
 
     with closing(get_connection()) as connection:
         with connection:
@@ -438,15 +198,10 @@ def update_category(
                             WHERE category_id = ?
                         ) AS is_used
                 """, (
-                    category_id,
-                    category_id
-                )).fetchone()
+                    category_id, category_id)).fetchone()
 
                 if used["is_used"]:
-                    raise ValueError(
-                        "Cannot change the type of a "
-                        "category already in use"
-                    )
+                    raise ValueError("Cannot change the type of a " "category already in use")
 
             cursor = connection.execute("""
                 UPDATE categories
@@ -457,13 +212,9 @@ def update_category(
 
                 WHERE id = ?
             """, (
-                name,
-                category_type,
-                category_id
-            ))
+                name, category_type, category_id))
 
             return cursor.rowcount == 1
-
 
 def delete_category(category_id):
 
@@ -490,34 +241,16 @@ def delete_category(category_id):
 
             return cursor.rowcount == 1
 
+# Transactions
 
-# ==================================================
-# TRANSACTIONS
-# ==================================================
+def get_transactions(month=None, sort_by="date", order="desc"):
 
-def get_transactions(
-    month=None,
-    sort_by="date",
-    order="desc"
-):
+    allowed_columns = {"date": "t.date", "description": "t.description", "category": "c.name",
+        "account": "COALESCE(a.name, b.name)", "amount": "t.amount_cents", "type": "t.type"}
 
-    allowed_columns = {
-        "date": "t.date",
-        "description": "t.description",
-        "category": "c.name",
-        "account": "COALESCE(a.name, b.name)",
-        "amount": "t.amount_cents",
-        "type": "t.type"
-    }
+    column = allowed_columns.get(sort_by, "t.date")
 
-    column = allowed_columns.get(
-        sort_by,
-        "t.date"
-    )
-
-    direction = (
-        "ASC" if order == "asc" else "DESC"
-    )
+    direction = ("ASC" if order == "asc" else "DESC")
 
     query = """
         SELECT
@@ -557,41 +290,20 @@ def get_transactions(
 
         parameters.append(month)
 
-    query += (
-        f" ORDER BY {column} {direction}, t.id DESC"
-    )
+    query += (f" ORDER BY {column} {direction}, t.id DESC")
 
     with closing(get_connection()) as connection:
 
-        return connection.execute(
-            query,
-            parameters
-        ).fetchall()
+        return connection.execute(query, parameters).fetchall()
 
-
-def save_transaction(
-    transaction_date,
-    description,
-    transaction_type,
-    amount_cents,
-    category_id,
-    from_account_id,
-    to_account_id,
-    transaction_id=None
-):
+def save_transaction(transaction_date, description, transaction_type,
+    amount_cents, category_id, from_account_id, to_account_id, transaction_id=None):
 
     with closing(get_connection()) as connection:
         with connection:
 
-            parameters = (
-                transaction_date,
-                description,
-                transaction_type,
-                amount_cents,
-                category_id,
-                from_account_id,
-                to_account_id
-            )
+            parameters = (transaction_date, description, transaction_type,
+                amount_cents, category_id, from_account_id, to_account_id)
 
             if transaction_id is None:
 
@@ -629,18 +341,12 @@ def save_transaction(
                       FROM contract_payments
                   )
             """, (
-                *parameters,
-                transaction_id
-            ))
+                *parameters, transaction_id))
 
             if cursor.rowcount != 1:
-                raise ValueError(
-                    "Transaction not found or linked "
-                    "to a contract payment"
-                )
+                raise ValueError("Transaction not found or linked " "to a contract payment")
 
             return transaction_id
-
 
 def delete_transaction(transaction_id):
 
@@ -659,10 +365,7 @@ def delete_transaction(transaction_id):
 
             return cursor.rowcount == 1
 
-
-# ==================================================
-# DASHBOARD CALCULATIONS
-# ==================================================
+# Dashboard calculations
 
 def get_monthly_summary(month, as_of_date):
 
@@ -693,10 +396,7 @@ def get_monthly_summary(month, as_of_date):
               AND date <= ?
 
         """, (
-            month,
-            as_of_date
-        )).fetchone()
-
+            month, as_of_date)).fetchone()
 
 def get_cumulative_saldo(as_of_date):
 
@@ -724,32 +424,16 @@ def get_cumulative_saldo(as_of_date):
 
         return result["cumulative_saldo"]
 
+# Monthly report
 
-# ==================================================
-# MONTHLY REPORT
-# ==================================================
+def get_monthly_report(sort_by="month", order="desc"):
 
-def get_monthly_report(
-    sort_by="month",
-    order="desc"
-):
+    allowed_columns = {"month": "month", "income": "income_cents", "expenses": "expenses_cents",
+        "saldo": "saldo_cents", "cumulative": "cumulative_cents"}
 
-    allowed_columns = {
-        "month": "month",
-        "income": "income_cents",
-        "expenses": "expenses_cents",
-        "saldo": "saldo_cents",
-        "cumulative": "cumulative_cents"
-    }
+    column = allowed_columns.get(sort_by, "month")
 
-    column = allowed_columns.get(
-        sort_by,
-        "month"
-    )
-
-    direction = (
-        "ASC" if order == "asc" else "DESC"
-    )
+    direction = ("ASC" if order == "asc" else "DESC")
 
     query = f"""
         WITH monthly AS (
@@ -815,35 +499,17 @@ def get_monthly_report(
 
         return connection.execute(query).fetchall()
 
+# Contracts
 
-# ==================================================
-# CONTRACTS
-# ==================================================
+def get_contracts(sort_by="name", order="asc"):
 
-def get_contracts(
-    sort_by="name",
-    order="asc"
-):
+    allowed_columns = {"name": "ct.name", "type": "ct.type", "amount": "current_amount_cents",
+        "category": "cat.name", "account": "a.name", "frequency": "ct.frequency", "start": "ct.start_date",
+        "end": "ct.end_date"}
 
-    allowed_columns = {
-        "name": "ct.name",
-        "type": "ct.type",
-        "amount": "current_amount_cents",
-        "category": "cat.name",
-        "account": "a.name",
-        "frequency": "ct.frequency",
-        "start": "ct.start_date",
-        "end": "ct.end_date"
-    }
+    column = allowed_columns.get(sort_by, "ct.name")
 
-    column = allowed_columns.get(
-        sort_by,
-        "ct.name"
-    )
-
-    direction = (
-        "ASC" if order == "asc" else "DESC"
-    )
+    direction = ("ASC" if order == "asc" else "DESC")
 
     query = f"""
         SELECT
@@ -882,7 +548,6 @@ def get_contracts(
 
         return connection.execute(query).fetchall()
 
-
 def get_contract(contract_id):
 
     with closing(get_connection()) as connection:
@@ -893,19 +558,8 @@ def get_contract(contract_id):
             WHERE id = ?
         """, (contract_id,)).fetchone()
 
-
-def save_contract(
-    name,
-    contract_type,
-    amount_cents,
-    category_id,
-    account_id,
-    frequency,
-    start_date,
-    end_date,
-    notes,
-    contract_id=None
-):
+def save_contract(name, contract_type, amount_cents, category_id, account_id, frequency, start_date,
+    end_date, notes, contract_id=None):
 
     with closing(get_connection()) as connection:
         with connection:
@@ -927,16 +581,8 @@ def save_contract(
 
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, (
-                    name,
-                    contract_type,
-                    amount_cents,
-                    category_id,
-                    account_id,
-                    frequency,
-                    start_date,
-                    end_date,
-                    notes
-                ))
+                    name, contract_type, amount_cents, category_id,
+                    account_id, frequency, start_date, end_date, notes))
 
                 new_contract_id = cursor.lastrowid
 
@@ -951,10 +597,7 @@ def save_contract(
 
                     VALUES (?, ?, ?)
                 """, (
-                    new_contract_id,
-                    amount_cents,
-                    start_date
-                ))
+                    new_contract_id, amount_cents, start_date))
 
                 return new_contract_id
 
@@ -1003,14 +646,9 @@ def save_contract(
                     WHERE id = ?
                 """, (contract_id,)).fetchone()
 
-                if (
-                    frequency != previous["frequency"]
-                    or start_date != previous["start_date"]
-                ):
-                    raise ValueError(
-                        "Cannot change the payment schedule "
-                        "after payments have been confirmed"
-                    )
+                if (frequency != previous["frequency"] or start_date != previous["start_date"]):
+                    raise ValueError("Cannot change the payment schedule "
+                        "after payments have been confirmed")
 
             earliest_price = connection.execute("""
                 SELECT MIN(valid_from) AS earliest
@@ -1020,14 +658,8 @@ def save_contract(
                 WHERE contract_id = ?
             """, (contract_id,)).fetchone()
 
-            if (
-                earliest_price["earliest"] is not None
-                and start_date > earliest_price["earliest"]
-            ):
-                raise ValueError(
-                    "Start date cannot be later than "
-                    "an existing price history entry"
-                )
+            if (earliest_price["earliest"] is not None and start_date > earliest_price["earliest"]):
+                raise ValueError("Start date cannot be later than " "an existing price history entry")
 
             cursor = connection.execute("""
                 UPDATE contracts
@@ -1044,42 +676,10 @@ def save_contract(
 
                 WHERE id = ?
             """, (
-                name,
-                contract_type,
-                category_id,
-                account_id,
-                frequency,
-                start_date,
-                end_date,
-                notes,
-                contract_id
-            ))
+                name, contract_type, category_id, account_id, frequency, start_date, end_date, notes,
+                contract_id))
 
             return contract_id
-
-
-def cancel_contract(
-    contract_id,
-    cancellation_date
-):
-
-    with closing(get_connection()) as connection:
-        with connection:
-
-            cursor = connection.execute("""
-                UPDATE contracts
-
-                SET cancelled_on = ?
-
-                WHERE id = ?
-                  AND cancelled_on IS NULL
-            """, (
-                cancellation_date,
-                contract_id
-            ))
-
-            return cursor.rowcount == 1
-
 
 def delete_contract(contract_id):
 
@@ -1104,10 +704,7 @@ def delete_contract(contract_id):
 
             return cursor.rowcount == 1
 
-
-# ==================================================
-# CONTRACT PRICE HISTORY
-# ==================================================
+# Contract price history
 
 def get_contract_prices(contract_id):
 
@@ -1127,11 +724,7 @@ def get_contract_prices(contract_id):
             ORDER BY valid_from ASC
         """, (contract_id,)).fetchall()
 
-
-def get_price_for_date(
-    contract_id,
-    payment_date
-):
+def get_price_for_date(contract_id, payment_date):
 
     with closing(get_connection()) as connection:
 
@@ -1147,23 +740,14 @@ def get_price_for_date(
 
             LIMIT 1
         """, (
-            contract_id,
-            payment_date
-        )).fetchone()
+            contract_id, payment_date)).fetchone()
 
         if result is None:
-            raise ValueError(
-                "No contract price defined for this date"
-            )
+            raise ValueError("No contract price defined for this date")
 
         return result["amount_cents"]
 
-
-def set_contract_price(
-    contract_id,
-    amount_cents,
-    valid_from
-):
+def set_contract_price(contract_id, amount_cents, valid_from):
 
     with closing(get_connection()) as connection:
         with connection:
@@ -1172,7 +756,7 @@ def set_contract_price(
                 SELECT
                     id,
                     start_date,
-                    cancelled_on
+                    end_date
 
                 FROM contracts
 
@@ -1183,16 +767,7 @@ def set_contract_price(
                 raise ValueError("Contract not found")
 
             if valid_from < contract["start_date"]:
-                raise ValueError(
-                    "Price effective date cannot be "
-                    "before the contract start date"
-                )
-
-            if contract["cancelled_on"]:
-                raise ValueError(
-                    "Cannot change the price of "
-                    "a cancelled contract"
-                )
+                raise ValueError("Price effective date cannot be " "before the contract start date")
 
             # A price change on an existing effective date
             # updates that historical price entry.
@@ -1212,114 +787,52 @@ def set_contract_price(
                 DO UPDATE SET
                     amount_cents = excluded.amount_cents
             """, (
-                contract_id,
-                amount_cents,
-                valid_from
-            ))
+                contract_id, amount_cents, valid_from))
 
             return True
 
+# Contract payment date calculations
 
-# ==================================================
-# CONTRACT PAYMENT DATE CALCULATIONS
-# ==================================================
-
-def advance_payment_date(
-    start_date,
-    frequency,
-    occurrence
-):
+def advance_payment_date(start_date, frequency, occurrence):
 
     if frequency == "weekly":
 
-        return start_date + timedelta(
-            weeks=occurrence
-        )
+        return start_date + timedelta(weeks=occurrence)
 
-    months = {
-        "monthly": 1,
-        "quarterly": 3,
-        "yearly": 12
-    }[frequency]
+    months = {"monthly": 1, "quarterly": 3, "half-yearly": 6, "yearly": 12}[frequency]
 
-    total_month = (
-        start_date.year * 12
-        + start_date.month - 1
-        + occurrence * months
-    )
+    total_month = (start_date.year * 12 + start_date.month - 1 + occurrence * months)
 
-    year, month_index = divmod(
-        total_month,
-        12
-    )
+    year, month_index = divmod(total_month, 12)
 
     month = month_index + 1
 
     if not 1 <= year <= 9999:
-        raise ValueError(
-            "Payment date outside supported range"
-        )
+        raise ValueError("Payment date outside supported range")
 
-    day = min(
-        start_date.day,
-        calendar.monthrange(year, month)[1]
-    )
+    day = min(start_date.day, calendar.monthrange(year, month)[1])
 
-    return date(
-        year,
-        month,
-        day
-    )
-
+    return date(year, month, day)
 
 def get_due_dates(contract, month):
 
-    year, month_number = map(
-        int,
-        month.split("-")
-    )
+    year, month_number = map(int, month.split("-"))
 
-    period_start = date(
-        year,
-        month_number,
-        1
-    )
+    period_start = date(year, month_number, 1)
 
-    period_end = date(
-        year,
-        month_number,
-        calendar.monthrange(
-            year,
-            month_number
-        )[1]
-    )
+    period_end = date(year, month_number, calendar.monthrange(year, month_number)[1])
 
-    start = date.fromisoformat(
-        contract["start_date"]
-    )
+    start = date.fromisoformat(contract["start_date"])
 
     if contract["end_date"]:
 
-        period_end = min(
-            period_end,
-            date.fromisoformat(
-                contract["end_date"]
-            )
-        )
+        period_end = min(period_end, date.fromisoformat(contract["end_date"]))
 
     if contract["cancelled_on"]:
 
-        period_end = min(
-            period_end,
-            date.fromisoformat(
-                contract["cancelled_on"]
-            ) - timedelta(days=1)
-        )
+        period_end = min(period_end, date.fromisoformat(contract["cancelled_on"]) - timedelta(days=1))
 
-    if (
-        period_end < start
-        or period_end < period_start
-    ):
+    if (period_end < start or period_end < period_start):
         return []
 
     due_dates = []
@@ -1330,11 +843,7 @@ def get_due_dates(contract, month):
 
         try:
 
-            due_date = advance_payment_date(
-                start,
-                contract["frequency"],
-                occurrence
-            )
+            due_date = advance_payment_date(start, contract["frequency"], occurrence)
 
         except (ValueError, OverflowError):
             break
@@ -1343,18 +852,13 @@ def get_due_dates(contract, month):
             break
 
         if due_date >= period_start:
-            due_dates.append(
-                due_date.isoformat()
-            )
+            due_dates.append(due_date.isoformat())
 
         occurrence += 1
 
     return due_dates
 
-
-# ==================================================
-# CONTRACT PAYMENT SCHEDULE
-# ==================================================
+# Contract payment schedule
 
 def get_contract_schedule(month):
 
@@ -1390,103 +894,55 @@ def get_contract_schedule(month):
                 valid_from
         """).fetchall()
 
-    paid_lookup = {
-        (p["contract_id"], p["due_date"]): p
-        for p in payments
-    }
+    paid_lookup = {(p["contract_id"], p["due_date"]): p for p in payments}
 
     price_lookup = {}
 
     for price in prices:
 
-        price_lookup.setdefault(
-            price["contract_id"],
-            []
-        ).append(price)
+        price_lookup.setdefault(price["contract_id"], []).append(price)
 
     schedule = []
 
     for contract in contracts:
 
-        contract_prices = price_lookup.get(
-            contract["id"],
-            []
-        )
+        contract_prices = price_lookup.get(contract["id"], [])
 
-        for due_date in get_due_dates(
-            contract,
-            month
-        ):
+        for due_date in get_due_dates(contract, month):
 
-            matching_prices = [
-                price
-                for price in contract_prices
-                if price["valid_from"] <= due_date
-            ]
+            matching_prices = [price for price in contract_prices if price["valid_from"] <= due_date]
 
             if matching_prices:
 
-                scheduled_amount = matching_prices[-1][
-                    "amount_cents"
-                ]
+                scheduled_amount = matching_prices[-1]["amount_cents"]
 
             else:
 
-                scheduled_amount = contract[
-                    "amount_cents"
-                ]
+                scheduled_amount = contract["amount_cents"]
 
-            payment = paid_lookup.get(
-                (contract["id"], due_date)
-            )
+            payment = paid_lookup.get((contract["id"], due_date))
 
             paid = payment is not None
 
             # Once confirmed, display the actual recorded
             # amount rather than the scheduled price.
 
-            displayed_amount = (
-                payment["paid_amount_cents"]
-                if paid
-                else scheduled_amount
-            )
+            displayed_amount = (payment["paid_amount_cents"] if paid else scheduled_amount)
 
-            schedule.append({
-                "contract_id": contract["id"],
-                "name": contract["name"],
-                "type": contract["type"],
-                "category": contract["category"],
-                "account": contract["account"],
-                "due_date": due_date,
-                "scheduled_amount_cents": scheduled_amount,
-                "amount_cents": displayed_amount,
-                "paid": paid,
-                "transaction_id": (
-                    payment["transaction_id"]
-                    if paid
-                    else None
-                )
-            })
+            schedule.append({"contract_id": contract["id"],
+                "name": contract["name"], "type": contract["type"],
+                "category": contract["category"], "account": contract["account"],
+                "due_date": due_date, "scheduled_amount_cents": scheduled_amount,
+                "amount_cents": displayed_amount, "paid": paid, "transaction_id": (payment["transaction_id"]
+                    if paid else None)})
 
-    schedule.sort(
-        key=lambda item: (
-            item["due_date"],
-            item["name"]
-        )
-    )
+    schedule.sort(key=lambda item: (item["due_date"], item["name"]))
 
     return schedule
 
+# Confirm contract payment
 
-# ==================================================
-# CONFIRM CONTRACT PAYMENT
-# ==================================================
-
-def confirm_contract_payment(
-    contract_id,
-    due_date,
-    override_amount_cents=None
-):
+def confirm_contract_payment(contract_id, due_date, override_amount_cents=None):
 
     with closing(get_connection()) as connection:
         with connection:
@@ -1498,19 +954,12 @@ def confirm_contract_payment(
             """, (contract_id,)).fetchone()
 
             if contract is None:
-                raise ValueError(
-                    "Contract not found"
-                )
+                raise ValueError("Contract not found")
 
-            valid_dates = get_due_dates(
-                contract,
-                due_date[:7]
-            )
+            valid_dates = get_due_dates(contract, due_date[:7])
 
             if due_date not in valid_dates:
-                raise ValueError(
-                    "Invalid scheduled payment date"
-                )
+                raise ValueError("Invalid scheduled payment date")
 
             existing = connection.execute("""
                 SELECT id
@@ -1520,14 +969,10 @@ def confirm_contract_payment(
                 WHERE contract_id = ?
                   AND due_date = ?
             """, (
-                contract_id,
-                due_date
-            )).fetchone()
+                contract_id, due_date)).fetchone()
 
             if existing:
-                raise ValueError(
-                    "Payment already confirmed"
-                )
+                raise ValueError("Payment already confirmed")
 
             # Determine the price effective on this
             # specific payment date.
@@ -1544,21 +989,15 @@ def confirm_contract_payment(
 
                 LIMIT 1
             """, (
-                contract_id,
-                due_date
-            )).fetchone()
+                contract_id, due_date)).fetchone()
 
             if price is None:
 
-                amount_cents = contract[
-                    "amount_cents"
-                ]
+                amount_cents = contract["amount_cents"]
 
             else:
 
-                amount_cents = price[
-                    "amount_cents"
-                ]
+                amount_cents = price["amount_cents"]
 
             # Optional one-time override.
             #
@@ -1568,9 +1007,7 @@ def confirm_contract_payment(
             if override_amount_cents is not None:
 
                 if override_amount_cents <= 0:
-                    raise ValueError(
-                        "Payment amount must be positive"
-                    )
+                    raise ValueError("Payment amount must be positive")
 
                 amount_cents = override_amount_cents
 
@@ -1579,15 +1016,11 @@ def confirm_contract_payment(
 
             if contract["type"] == "expense":
 
-                from_account_id = contract[
-                    "account_id"
-                ]
+                from_account_id = contract["account_id"]
 
             else:
 
-                to_account_id = contract[
-                    "account_id"
-                ]
+                to_account_id = contract["account_id"]
 
             cursor = connection.execute("""
                 INSERT INTO transactions (
@@ -1602,14 +1035,8 @@ def confirm_contract_payment(
 
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             """, (
-                due_date,
-                contract["name"],
-                contract["type"],
-                amount_cents,
-                contract["category_id"],
-                from_account_id,
-                to_account_id
-            ))
+                due_date, contract["name"], contract["type"], amount_cents,
+                contract["category_id"], from_account_id, to_account_id))
 
             transaction_id = cursor.lastrowid
 
@@ -1622,22 +1049,14 @@ def confirm_contract_payment(
 
                 VALUES (?, ?, ?)
             """, (
-                contract_id,
-                due_date,
-                transaction_id
-            ))
+                contract_id, due_date, transaction_id))
 
             return transaction_id
 
-
-# ==================================================
-# DIRECT EXECUTION
-# ==================================================
+# Direct execution
 
 if __name__ == "__main__":
 
     initialize_database()
 
-    print(
-        "Database initialized successfully."
-    )
+    print("Database initialized successfully.")
